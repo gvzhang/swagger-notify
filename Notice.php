@@ -12,32 +12,36 @@ $diffLine = $git->getLastDiffLine();
 $addMethod = $git->getAddMethodInfo();
 // 获取删除的接口
 $deleteMethod = $git->getDeleteMethodInfo();
-if($diffLine || $addMethod || $deleteMethod){
-	$diffInfoList = [];
-	if($diffLine){
-		$goodsArr = json_decode(file_get_contents($repoPath));
-		$api = new Api($goodsArr, $diffLine);
-		$diffInfoList = $api->getDiffMethodInfo();
-	}
+if ($diffLine || $addMethod || $deleteMethod) {
+    $diffInfoList = [];
+    if ($diffLine) {
+        $goodsArr = json_decode(file_get_contents($repoPath));
+        $api = new Api($goodsArr, $diffLine);
+        $diffInfoList = $api->getDiffMethodInfo();
+    }
 
-	if($addMethod){
-		array_push($diffInfoList, $addMethod);
-	}
+    if ($addMethod) {
+        foreach ($addMethod as $method) {
+            array_push($diffInfoList, $method);
+        }
+    }
 
-	if($deleteMethod){
-		array_push($diffInfoList, $deleteMethod);
-	}
+    if ($deleteMethod) {
+        foreach ($deleteMethod as $method) {
+            array_push($diffInfoList, $method);
+        }
+    }
 
-	if($diffInfoList){
-		// 生成修改后的Swagger JSON数据
-		$tplPath = "/home/vagrant/Code/API_HG_Business_Doc_Old/HG_Business/diff/diff.json.tpl";
-		$target = "/home/vagrant/Code/API_HG_Business_Doc_Old/HG_Business/diff/diff.json";
-		$replaceVar = "##PATHS##";
-		$swaggerJson = new SwaggerJson($diffInfoList, $tplPath, $target, $replaceVar);
-		echo "Generate ".($swaggerJson->generate()?"Success":"Failed");
-	}else{
-		echo "Get Diff List Failed";
-	}
-}else{
-	echo "Get Diff Failed";
+    if ($diffInfoList) {
+        // 生成修改后的Swagger JSON数据
+        $tplPath = "/home/vagrant/Code/API_HG_Business_Doc_Old/HG_Business/diff/diff.json.tpl";
+        $target = "/home/vagrant/Code/API_HG_Business_Doc_Old/HG_Business/diff/diff.json";
+        $replaceVar = "##PATHS##";
+        $swaggerJson = new SwaggerJson($diffInfoList, $tplPath, $target, $replaceVar);
+        echo "Generate " . ($swaggerJson->generate() ? "Success" : "Failed");
+    } else {
+        echo "Get Diff List Failed";
+    }
+} else {
+    echo "Get Diff Failed";
 }
