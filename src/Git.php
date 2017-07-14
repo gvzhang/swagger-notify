@@ -1,5 +1,10 @@
 <?php
-require "Logger.php";
+
+/**
+ * 获取GIT中的信息
+ */
+
+namespace App;
 
 class Git
 {
@@ -9,14 +14,24 @@ class Git
     private $_command;
     private $_status;
     private $_log;
+    private $_repoPath;
+
+    public function __construct($repoPath)
+    {
+        $this->_repoPath = $repoPath;
+        if (empty($this->_repoPath) || !is_dir($this->_repoPath)) {
+            throw new \InvalidArgumentException("repoPath Error");
+        }
+    }
 
     /**
      * 获取修改的接口
+     * @param $diffLog
+     * @return array
      */
-    public function getLastDiffLine()
+    public function getLastDiffLine($diffLog)
     {
         // 防止重复匹配新增或删除的接口
-        $diffLog = $this->_getGitDiff();
         $matchResult = [];
         foreach ($diffLog as $key => $log) {
             preg_match_all('/@{2}\s\-[0-9]+,[0-9]+\s\+([0-9]+),[0-9]+\s@{2}/', $log, $matchesModify, PREG_PATTERN_ORDER);
@@ -32,10 +47,11 @@ class Git
 
     /**
      * 获取新增的接口
+     * @param $diffLog
+     * @return array
      */
-    public function getAddMethodInfo()
+    public function getAddMethodInfo($diffLog)
     {
-        $diffLog = $this->_getGitDiff();
         $matchKey = [];
         $matchKeyAll = [];
         foreach ($diffLog as $key => $log) {
@@ -76,10 +92,11 @@ class Git
 
     /**
      * 获取删除的接口
+     * @param $diffLog
+     * @return array
      */
-    public function getDeleteMethodInfo()
+    public function getDeleteMethodInfo($diffLog)
     {
-        $diffLog = $this->_getGitDiff();
         $matchKey = [];
         $matchKeyAll = [];
         foreach ($diffLog as $key => $log) {
@@ -117,12 +134,46 @@ class Git
         }
     }
 
-    private function _getGitDiff()
+    /**
+     * 获取改动的文件
+     * @return mixed
+     */
+    public function getChangFiles()
+    {
+        $fileList = [];
+        $matchFile = "";
+        $diffLog = $this->_getDiff();
+        $logDiff = false;
+        foreach ($diffLog as $key => $log) {
+            // 匹配差异JSON文件
+            $matchRes = preg_match_all('/diff\s--git\sa\/(.*)?\s/', $log, $matches, PREG_PATTERN_ORDER);
+            if ($matchRes) {
+                $logDiff = false;
+                $file = pathinfo($matches[1][0]);
+                if (strtolower($file["extension"]) == "json") {
+                    $logDiff = true;
+                    $matchFile = $file['basename'];
+                    $fileList[$matchFile] = [];
+                }
+            }
+
+            if ($logDiff) {
+                array_push($fileList[$matchFile], $log);
+            }
+        }
+        return $fileList;
+    }
+
+    /**
+     * 获取差异文本
+     * @return mixed
+     */
+    private function _getDiff()
     {
         if ($this->_log) {
             return $this->_log;
         }
-        $cmd[] = sprintf('cd /home/vagrant/Code/sample');
+        $cmd[] = sprintf('cd ' . $this->_repoPath);
         $cmd[] = sprintf('git diff HEAD^ HEAD --unified=1');
         $command = join(' && ', $cmd);
         $this->_runLocalCommand($command);

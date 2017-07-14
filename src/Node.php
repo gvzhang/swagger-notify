@@ -1,6 +1,12 @@
 <?php
 
-class Api
+/**
+ * Swagger的JSON文档处理
+ */
+
+namespace App;
+
+class Node
 {
     const MODIFY_METHOD_TIPS = "<span style='color:green;'>*****【修改接口】*****</span><br />";
 

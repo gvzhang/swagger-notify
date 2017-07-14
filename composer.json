@@ -1,0 +1,19 @@
+{
+  "name": "gvzhang/Swagger-Notify",
+  "description": "A notification tool for the modification of swagger api",
+  "keywords": ["swagger", "notification"],
+  "license": "MIT",
+  "type": "project",
+  "require": {
+    "php": ">=5.6.4",
+    "mustangostang/spyc": "^0.6.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    },
+    "files": [
+      "utils/helpers.php"
+    ]
+  }
+}

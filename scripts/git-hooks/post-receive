@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# 注意权限问题
+cd /home/git/sample-test
+unset GIT_DIR
+git pull 1>/tmp/sample-git.out 2>&1
+php -f /home/vagrant/Code/php-debug/Swagger-Notify/run.php 1>/tmp/swagger-notify.out 2>&1
