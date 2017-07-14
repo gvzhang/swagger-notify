@@ -66,7 +66,7 @@ class Notification
             }
             return $diffInfoList;
         } else {
-            throw new \LogicException("Get change file Failed");
+            return [];
         }
     }
 
@@ -82,9 +82,7 @@ class Notification
             $swaggerJson = new SwaggerJson($diffInfoList, $this->_target);
             $swaggerJson->generate();
             Logger::write("generate success");
-            return true;
-        } else {
-            throw new \LogicException("Get Diff List Failed");
         }
+        return true;
     }
 }
