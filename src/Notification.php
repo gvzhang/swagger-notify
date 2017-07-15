@@ -10,8 +10,12 @@ class Notification
 {
     private $_repoPath;
     private $_target;
+    private $_emailSrv;
+    private $_emailTpl;
+    private $_emailSubject = "API接口更新通知";
+    private $_notifyApiUrl = "http://192.168.2.23:8010";
 
-    public function __construct($repoPath, $target)
+    public function __construct($repoPath, $target, \PHPMailer $emailSrv)
     {
         $this->_repoPath = $repoPath;
         $this->_target = $target;
@@ -21,6 +25,8 @@ class Notification
         if (empty($this->_target) || !is_dir($this->_target)) {
             throw new \InvalidArgumentException("target Error");
         }
+        $this->_emailSrv = $emailSrv;
+        $this->_emailTpl = rootPath() . "/template/email.notify.tpl";
     }
 
     /**
@@ -80,9 +86,44 @@ class Notification
         if ($diffInfoList) {
             // 生成修改后的Swagger JSON数据
             $swaggerJson = new SwaggerJson($diffInfoList, $this->_target);
-            $swaggerJson->generate();
-            Logger::write("generate success");
+            $htmlFileList = $swaggerJson->generate();
+            if ($htmlFileList) {
+                foreach ($htmlFileList as $file) {
+
+                }
+                Logger::write("generate success");
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
         }
-        return true;
+    }
+
+    /**
+     * 发送邮件通知
+     * @param $sendList
+     * @param $file
+     * @return bool|string
+     */
+    private function _sendMail($sendList, $file)
+    {
+        foreach ($sendList as $address) {
+            $this->_emailSrv->addAddress($address);
+        }
+        $this->_emailSrv->isHTML(true);
+        $this->_emailSrv->Subject = $this->_emailSubject;
+        $this->_emailSrv->Body = preg_replace('/##URL##/', $this->_notifyApiUrl . "/" . $file, $this->_getEmailTpl());
+        if (!$this->_emailSrv->send()) {
+            return $this->_emailSrv->ErrorInfo;
+        } else {
+            return true;
+        }
+    }
+
+    private function _getEmailTpl()
+    {
+        return file_get_contents($this->_emailTpl);
     }
 }

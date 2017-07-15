@@ -6,7 +6,8 @@
   "type": "project",
   "require": {
     "php": ">=5.6.4",
-    "mustangostang/spyc": "^0.6.2"
+    "mustangostang/spyc": "^0.6.2",
+    "phpmailer/phpmailer": "^5.2"
   },
   "autoload": {
     "psr-4": {

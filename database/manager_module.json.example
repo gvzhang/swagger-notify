@@ -1,0 +1,27 @@
+{
+  "business": {
+    "client": [
+      "xiaozhang",
+      "xiaochen"
+    ],
+    "common": [
+      "xiaozhang",
+      "xiaochen",
+      "xiaoma"
+    ],
+    "goods": [
+      "xiaozhang",
+      "xiaochen",
+      "xiaoma"
+    ],
+    "trading": [
+      "xiaozhang",
+      "xiaochen",
+      "xiaoma"
+    ],
+    "ucenter": [
+      "xiaozhang",
+      "xiaoma"
+    ]
+  }
+}

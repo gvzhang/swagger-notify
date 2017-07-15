@@ -38,6 +38,7 @@ class SwaggerJson
      */
     public function generate()
     {
+        $htmlFileList = [];
         $tplData = $this->_getTplData();
         $jsonTpl = $this->_getJsonTpl();
         $htmlTpl = $this->_getHtmlTpl();
@@ -50,9 +51,11 @@ class SwaggerJson
 
             // 写入HTML数据
             $putContent = str_replace(self::REPLACE_VAR, $jsonSavePath, $htmlTpl);
-            $htmlSavePath = $this->_htmlDir . "/" . $file["filename"] . "-" . time() . ".html";
-            file_put_contents($this->_target . "/" . $htmlSavePath, $putContent);
+            $htmlFileName = $file["filename"] . "-" . time() . ".html";
+            file_put_contents($this->_target . "/" . $this->_htmlDir . "/" . $htmlFileName, $putContent);
+            array_push($htmlFileList, $htmlFileName);
         }
+        return $htmlFileList;
     }
 
     /**
