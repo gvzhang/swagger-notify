@@ -3,6 +3,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 $config = spyc_load_file(rootPath() . "/env.yaml");
 
 $mail = new PHPMailer();
+$mail->CharSet = 'UTF-8';
 $mail->isSMTP();                                      // Set mailer to use SMTP
 $mail->Host = $config["email"]["host"];  // Specify main and backup SMTP servers
 $mail->SMTPAuth = true;                               // Enable SMTP authentication
@@ -12,5 +13,6 @@ $mail->SMTPSecure = 'tls';                            // Enable TLS encryption, 
 $mail->Port = $config["email"]["port"];                                    // TCP port to connect to
 $mail->setFrom($config["email"]["username"]);
 
-$notification = new \App\Notification($config["repoPath"], $config["target"], $mail);
+$repository = new \App\Repository();
+$notification = new \App\Notification($config["repoPath"], $config["target"], $mail, $repository);
 $notification->execute();

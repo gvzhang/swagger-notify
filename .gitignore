@@ -2,3 +2,7 @@ doc
 log
 .idea
 vendor
+env.yaml
+database/manager.json
+database/manager_module.json
+database/module.json

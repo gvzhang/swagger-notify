@@ -10,12 +10,15 @@ class Notification
 {
     private $_repoPath;
     private $_target;
+
     private $_emailSrv;
     private $_emailTpl;
-    private $_emailSubject = "API接口更新通知";
-    private $_notifyApiUrl = "http://192.168.2.23:8010";
+    const EMAIL_SUBJECT = "API接口更新通知";
+    const NOTIFY_API_URL = "http://192.168.2.23:8010";
 
-    public function __construct($repoPath, $target, \PHPMailer $emailSrv)
+    private $_repositorySrv;
+
+    public function __construct($repoPath, $target, \PHPMailer $emailSrv, Repository $repository)
     {
         $this->_repoPath = $repoPath;
         $this->_target = $target;
@@ -27,6 +30,8 @@ class Notification
         }
         $this->_emailSrv = $emailSrv;
         $this->_emailTpl = rootPath() . "/template/email.notify.tpl";
+
+        $this->_repositorySrv = $repository;
     }
 
     /**
@@ -89,7 +94,14 @@ class Notification
             $htmlFileList = $swaggerJson->generate();
             if ($htmlFileList) {
                 foreach ($htmlFileList as $file) {
-
+                    $fileInfo = pathinfo($file);
+                    $module = explode("-", $fileInfo["filename"]);
+                    $managerList = $this->_repositorySrv->getManagerByModule($module[0]);
+                    $emailList = $this->_repositorySrv->getEmailByManager($managerList);
+                    $sendResult = $this->_sendMail($emailList, $file);
+                    if ($sendResult !== true) {
+                        Logger::write(json_encode($sendResult, JSON_UNESCAPED_UNICODE));
+                    }
                 }
                 Logger::write("generate success");
                 return true;
@@ -113,8 +125,8 @@ class Notification
             $this->_emailSrv->addAddress($address);
         }
         $this->_emailSrv->isHTML(true);
-        $this->_emailSrv->Subject = $this->_emailSubject;
-        $this->_emailSrv->Body = preg_replace('/##URL##/', $this->_notifyApiUrl . "/" . $file, $this->_getEmailTpl());
+        $this->_emailSrv->Subject = self::EMAIL_SUBJECT;
+        $this->_emailSrv->Body = preg_replace('/##URL##/', self::NOTIFY_API_URL . "/" . $file, $this->_getEmailTpl());
         if (!$this->_emailSrv->send()) {
             return $this->_emailSrv->ErrorInfo;
         } else {

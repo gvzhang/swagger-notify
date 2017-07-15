@@ -150,10 +150,11 @@ class Git
             if ($matchRes) {
                 $logDiff = false;
                 $file = pathinfo($matches[1][0]);
-                // 新增文件或者删除文件不做比较
+                // 新增文件、删除文件、重命名文件不做比较
                 if (strtolower($file["extension"]) == "json"
                     && !preg_match('/deleted\sfile\smode/', $diffLog[$key + 1])
                     && !preg_match('/new\sfile\smode/', $diffLog[$key + 1])
+                    && !preg_match('/similarity\s/', $diffLog[$key + 1])
                 ) {
                     $logDiff = true;
                     $matchFile = $file['basename'];
