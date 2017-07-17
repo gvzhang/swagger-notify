@@ -10,7 +10,7 @@
 
 具体的详细修改内容，可在description属性中进行说明。
 
-#### Swagger接口文档命名
+#### Swagger接口文档规范
 swagger的json数据文件需要按照module.json的分层来命名，中间使用"_"下划线间隔。
 
 例如：module.json文件
@@ -22,6 +22,19 @@ swagger的json数据文件需要按照module.json的分层来命名，中间使�
 }
 ```
 swagger的json数据文件命名则为 **heygearsbusiness_client.json**
+
+##### 接口编写
+每一个接口请确保有**description**属性，便于添加变更说明。
+```json
+"/token/get": {
+  "get": {
+    "tags": [
+      "token"
+    ],
+    "summary": "获取TOKEN",
+    "description": "",
+    "parameters": [
+```
 
 #### 对比结果
 只对swagger的json数据文件进行差异对比，获取到对比结果后进行通知。
@@ -38,12 +51,24 @@ swagger的json数据文件命名则为 **heygearsbusiness_client.json**
   - manager.json：记录管理员信息
   - module.json：记录模块信息，第一级为项目名，第二级为项目模块
   - manager_module.json：记录管理员以及模块的关系
-- scripts：部署的脚本样例
+- scripts：部署的执行脚本
 - src：项目主要代码
 - template：邮件模板以及生成swagger文件的模板
 - utils：工具库
 
 ## 部署说明
+#### 配置项
+你可以通过env.yaml来对项目进行基本的配置。
+
+| Name          | Description   |
+| -------------: |:-------------:|
+| repoPath      | 拉取的API项目路径 |
+| target      | 展示比较内容的项目路径 |
+| email.host | 邮箱HOST      |
+| email.port | 邮箱PORT      |
+| email.username | 邮箱用户名      |
+| email.password | 邮箱密码      |
+
 #### 接口文档
 部署的服务端需要有拉取下来的接口文档项目，即为配置项中的repoPath。
 
@@ -71,19 +96,9 @@ php -f /home/vagrant/Code/php-debug/Swagger-Notify/run.php 1>/tmp/swagger-notify
 
 ```
 
-#### 配置项
-你可以通过env.yaml来对项目进行基本的配置。
-
-| Name          | Description   |
-| -------------: |:-------------:|
-| repoPath      | 拉取的API项目路径 |
-| target      | 展示比较内容的项目路径 |
-| email.host | 邮箱HOST      |
-| email.port | 邮箱PORT      |
-| email.username | 邮箱用户名      |
-| email.password | 邮箱密码      |
+#### 对比文件清理
+scripts文件夹里面的clean.sh脚本是用于定期清理对比文件，自行加入定时任务中
 
 #### 讨论
 - 通知配置管理模块
-- 自动清理差异文件
 - 发生异常重新通知机制

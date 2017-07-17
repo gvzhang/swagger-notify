@@ -40,24 +40,24 @@ class Notification
      */
     protected function getChangeApiInfo()
     {
-        $git = new Git($this->_repoPath);
-        $changeFileList = $git->getChangFiles();
+        $textProcess = new TextProcess($this->_repoPath);
+        $changeFileList = $textProcess->getChangFiles();
         if ($changeFileList) {
             $diffInfoList = [];
             foreach ($changeFileList as $file => $logs) {
                 $diffInfoList[$file] = [];
                 // 获取修改的接口
-                $diffLine = $git->getLastDiffLine($logs);
+                $diffLine = $textProcess->getLastDiffLine($logs);
                 // 获取新增的接口
-                $addMethod = $git->getAddMethodInfo($logs);
+                $addMethod = $textProcess->getAddMethodInfo($logs);
                 // 获取删除的接口
-                $deleteMethod = $git->getDeleteMethodInfo($logs);
+                $deleteMethod = $textProcess->getDeleteMethodInfo($logs);
                 if ($diffLine || $addMethod || $deleteMethod) {
                     // 修改的接口信息
                     if ($diffLine) {
                         $goodsArr = json_decode(file_get_contents($this->_repoPath . "/api-json/" . $file));
-                        $api = new Node($goodsArr, $diffLine);
-                        foreach ($api->getDiffMethodInfo() as $methodInfo) {
+                        $node = new Node($goodsArr, $diffLine);
+                        foreach ($textProcess->getDiffMethodInfo($node) as $methodInfo) {
                             array_push($diffInfoList[$file], $methodInfo);
                         }
                     }

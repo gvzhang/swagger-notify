@@ -6,15 +6,23 @@
 
 namespace App;
 
-class Git
+class TextProcess
 {
     const ADD_METHOD_TIPS = "<span style='color:red;'>*****【新增接口】*****</span><br />";
     const DELETE_METHOD_TIPS = "<span style='color:#878B95;'>*****【删除接口】*****</span><br />";
+    const MODIFY_METHOD_TIPS = "<span style='color:green;'>*****【修改接口】*****</span><br />";
 
     private $_command;
     private $_status;
     private $_log;
     private $_repoPath;
+    private $_diffInfoList = [];
+    private $_checkMethod = false;
+    private $_nameJson = null;
+    private $_httpMethod = null;
+    private $_replacePattern = '/"description":\s*"(.*)?",(\\n)*\s*"(swagger|info|host|basePath|schemes|consumes|produces|paths|definitions|parameters|responses|securityDefinitions|security|tags|externalDocs)/';
+    private $_apiNamePattern = '/[\-|\+]\s+\"\/(.*)?\":\s\{/';
+    private $_numPattern = '/@{2}\s\-[0-9]+,[0-9]+\s\+([0-9]+),[0-9]+\s@{2}/';
 
     public function __construct($repoPath)
     {
@@ -34,10 +42,10 @@ class Git
         // 防止重复匹配新增或删除的接口
         $matchResult = [];
         foreach ($diffLog as $key => $log) {
-            preg_match_all('/@{2}\s\-[0-9]+,[0-9]+\s\+([0-9]+),[0-9]+\s@{2}/', $log, $matchesModify, PREG_PATTERN_ORDER);
+            preg_match_all($this->_numPattern, $log, $matchesModify, PREG_PATTERN_ORDER);
             if ($matchesModify[1]) {
                 // 匹配是否为非方法（属性）修改
-                if (!preg_match('/[\-|\+]\s+\"\/(.*)?\":\s\{/', $diffLog[$key + 2])) {
+                if (!preg_match($this->_apiNamePattern, $diffLog[$key + 2]) && !preg_match($this->_apiNamePattern, $diffLog[$key + 3])) {
                     array_push($matchResult, $matchesModify[1][0]);
                 }
             }
@@ -57,13 +65,22 @@ class Git
         foreach ($diffLog as $key => $log) {
             // 1、是否为行数字符串
             // 2、匹配是否为方法修改
-            if (preg_match('/@{2}\s\-[0-9]+,[0-9]+\s\+([0-9]+),[0-9]+\s@{2}/', $log)) {
+            if (preg_match($this->_numPattern, $log)) {
                 array_push($matchKeyAll, $key);
 
-                if (preg_match('/@{2}\s\-[0-9]+,2\s\+([0-9]+),[1-9]([0-9]+)*\s@{2}/', $log) &&
-                    preg_match('/[\-|\+]\s+\"\/(.*)?\":\s\{/', $diffLog[$key + 2])
-                ) {
-                    array_push($matchKey, $key);
+                if (preg_match('/@{2}\s\-[0-9]+,2\s\+([0-9]+),[1-9]([0-9]+)*\s@{2}/', $log)) {
+                    if (preg_match($this->_apiNamePattern, $diffLog[$key + 2])) {
+                        array_push($matchKey, $key);
+                        // offset开始位置
+                        $matchKey[$key] = 2;
+                    }
+
+                    //兼容最后一个接口的新增，最后一个符号需要加上","，会被看做修改行
+                    if (preg_match($this->_apiNamePattern, $diffLog[$key + 3])) {
+                        array_push($matchKey, $key);
+                        // offset开始位置
+                        $matchKey[$key] = 3;
+                    }
                 }
             }
         }
@@ -71,16 +88,16 @@ class Git
         if ($matchKey) {
             $matchResult = [];
             foreach ($matchKeyAll as $key => $match) {
-                if (in_array($match, $matchKey)) {
+                if (in_array($match, array_keys($matchKey))) {
                     if (isset($matchKeyAll[$key + 1])) {
                         $sliceLength = $matchKeyAll[$key + 1] - $match - 3;
                     } else {
                         $sliceLength = count($diffLog) - $match - 3;
                     }
-                    $matchArr = array_slice($diffLog, $match + 2, $sliceLength);
+                    $matchArr = array_slice($diffLog, $match + $matchKey[$match], $sliceLength);
                     $matchStr = implode(PHP_EOL, $matchArr);
                     $clearStr = rtrim(preg_replace('/\+\s/', '', $matchStr), ",");
-                    $addTips = preg_replace('/"description":\s+"(.*?)"/', '"description":"' . self::ADD_METHOD_TIPS . '$1"', $clearStr, 1);
+                    $addTips = preg_replace($this->_replacePattern, "\"description\":\"" . self::ADD_METHOD_TIPS . "$1\",\"$3", $clearStr);
                     array_push($matchResult, json_decode("{" . $addTips . "}"));
                 }
             }
@@ -102,35 +119,77 @@ class Git
         foreach ($diffLog as $key => $log) {
             // 1、是否为行数字符串
             // 2、匹配是否为方法修改
-            if (preg_match('/@{2}\s\-[0-9]+,[0-9]+\s\+([0-9]+),[0-9]+\s@{2}/', $log)) {
+            if (preg_match($this->_numPattern, $log)) {
                 array_push($matchKeyAll, $key);
 
-                if (preg_match('/@{2}\s\-([0-9]+),[1-9]([0-9]+)*\s\+[0-9]+,2\s@{2}/', $log) &&
-                    preg_match('/[\-|\+]\s+\"\/(.*)?\":\s\{/', $diffLog[$key + 2])
-                ) {
-                    array_push($matchKey, $key);
+                if (preg_match('/@{2}\s\-([0-9]+),[1-9]([0-9]+)*\s\+[0-9]+,2\s@{2}/', $log)) {
+                    if (preg_match($this->_apiNamePattern, $diffLog[$key + 2])) {
+                        array_push($matchKey, $key);
+                        // offset开始位置
+                        $matchKey[$key] = 2;
+                    }
+
+                    //兼容最后一个接口的删除，最后一个符号需要删除","，会被看做修改行
+                    if (preg_match($this->_apiNamePattern, $diffLog[$key + 3])) {
+                        array_push($matchKey, $key);
+                        // offset开始位置
+                        $matchKey[$key] = 3;
+                    }
                 }
             }
         }
         if ($matchKey) {
             $matchResult = [];
             foreach ($matchKeyAll as $key => $match) {
-                if (in_array($match, $matchKey)) {
+                if (in_array($match, array_keys($matchKey))) {
                     if (isset($matchKeyAll[$key + 1])) {
                         $sliceLength = $matchKeyAll[$key + 1] - $match - 3;
                     } else {
                         $sliceLength = count($diffLog) - $match - 3;
                     }
-                    $matchArr = array_slice($diffLog, $match + 2, $sliceLength);
+                    $matchArr = array_slice($diffLog, $match + $matchKey[$match], $sliceLength);
                     $matchStr = implode(PHP_EOL, $matchArr);
                     $clearStr = rtrim(preg_replace('/\-\s/', '', $matchStr), ",");
-                    $addTips = preg_replace('/"description":\s+"(.*?)"/', '"description":"' . self::DELETE_METHOD_TIPS . '$1","deprecated":true', $clearStr, 1);
+                    $addTips = preg_replace($this->_replacePattern, "\"description\":\"" . self::DELETE_METHOD_TIPS . "$1\",\"deprecated\":true,\"$3", $clearStr);
                     array_push($matchResult, json_decode("{" . $addTips . "}"));
                 }
             }
             return $matchResult;
         } else {
             return [];
+        }
+    }
+
+    /**
+     * 获取差异API详情
+     * @param Node $node
+     * @return array
+     */
+    public function getDiffMethodInfo(Node $node)
+    {
+        $this->_getDiffMethodInfo($node->getData(), $node->getMethod());
+        return $this->_diffInfoList;
+    }
+
+    private function _getDiffMethodInfo($data, $diffMethod)
+    {
+        foreach ($data as $key => $obj) {
+            // API方法以及HTTP方法相同才计入差异
+            if ($this->_checkMethod && ($key === $this->_httpMethod)) {
+                $addTips = preg_replace($this->_replacePattern, "\"description\":\"" . self::MODIFY_METHOD_TIPS . "$1\",\"$3", json_encode($obj, JSON_UNESCAPED_UNICODE));
+                array_push($this->_diffInfoList, json_decode(str_replace("##DETAIL##", '"' . $key . '":' . $addTips, $this->_nameJson)));
+                $this->_checkMethod = false;
+                $this->_nameJson = "";
+                $this->_httpMethod = "";
+            }
+            if ($key && in_array($key, array_keys($diffMethod))) {
+                $this->_checkMethod = true;
+                $this->_nameJson = '{"' . $key . '":{##DETAIL##}}';
+                $this->_httpMethod = $diffMethod[$key];
+            }
+            if (is_object($obj) || is_array($obj)) {
+                $this->_getDiffMethodInfo($obj, $diffMethod);
+            }
         }
     }
 
