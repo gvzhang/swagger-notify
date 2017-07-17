@@ -30,6 +30,9 @@ swagger的json数据文件命名则为 **heygearsbusiness_client.json**
 
 **目前对于大量删除、新增接口等操作（一般在刚开始编写文档的是）对比后的结果是不准确的，请注意**
 
+#### GIT提交
+每次commit之后必须push代码到服务端才能触发最新的对比差异。如多个commit一同push则只对比最新的差异。
+
 ## 目录结构
 - database：存储通知配置
   - manager.json：记录管理员信息

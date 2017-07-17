@@ -68,9 +68,9 @@ class Node
         $parentList = $this->getParentList();
         foreach ($parentList as $parent) {
             $path = false;
-            foreach ($parent as $val) {
+            foreach ($parent as $key => $val) {
                 if ($path) {
-                    array_push($changeMethod, $val);
+                    $changeMethod[$val] = $parent[$key + 1];
                     break;
                 }
                 if (strtolower($val) == "paths") {
@@ -91,12 +91,25 @@ class Node
         return $this->_diffInfoList;
     }
 
+    private $_checkMethod = false;
+    private $_nameJson = null;
+    private $_httpMethod = null;
+
     private function _getDiffMethodInfo($data, $diffMethod)
     {
         foreach ($data as $key => $obj) {
-            if ($key && in_array($key, $diffMethod)) {
+            // API方法以及HTTP方法相同才计入差异
+            if ($this->_checkMethod && ($key === $this->_httpMethod)) {
                 $addTips = preg_replace('/"description":"(.*?)"/', '"description":"' . self::MODIFY_METHOD_TIPS . '$1"', json_encode($obj, JSON_UNESCAPED_UNICODE), 1);
-                array_push($this->_diffInfoList, json_decode('{"' . $key . '":' . $addTips . '}'));
+                array_push($this->_diffInfoList, json_decode(str_replace("##DETAIL##", '"' . $key . '":' . $addTips, $this->_nameJson)));
+                $this->_checkMethod = false;
+                $this->_nameJson = "";
+                $this->_httpMethod = "";
+            }
+            if ($key && in_array($key, array_keys($diffMethod))) {
+                $this->_checkMethod = true;
+                $this->_nameJson = '{"' . $key . '":{##DETAIL##}}';
+                $this->_httpMethod = $diffMethod[$key];
             }
             if (is_object($obj) || is_array($obj)) {
                 $this->_getDiffMethodInfo($obj, $diffMethod);
