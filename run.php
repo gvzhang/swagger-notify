@@ -1,5 +1,15 @@
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
+
+if (!isset($argv[1]) || empty($argv[1])) {
+    throw new \InvalidArgumentException("repoPath Error");
+}
+if (!is_dir($argv[1])) {
+    throw new \InvalidArgumentException("repoPath Error");
+}
+$repoPath = $argv[1];
+
+// 读取配置
 $config = spyc_load_file(rootPath() . "/env.yaml");
 
 $mail = new PHPMailer();
@@ -14,5 +24,5 @@ $mail->Port = $config["email"]["port"];                                    // TC
 $mail->setFrom($config["email"]["username"]);
 
 $repository = new \App\Repository();
-$notification = new \App\Notification($config["repoPath"], $config["target"], $mail, $repository);
+$notification = new \App\Notification($repoPath, $config["target"], $mail, $repository);
 $notification->execute();

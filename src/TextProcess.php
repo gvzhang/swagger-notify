@@ -167,6 +167,7 @@ class TextProcess
      */
     public function getDiffMethodInfo(Node $node)
     {
+        $this->_diffInfoList = [];
         $this->_getDiffMethodInfo($node->getData(), $node->getMethod());
         return $this->_diffInfoList;
     }

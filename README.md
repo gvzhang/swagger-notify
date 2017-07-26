@@ -37,11 +37,6 @@ swagger的json数据文件命名则为 **heygearsbusiness_client.json**
 ```
 
 #### 对比结果
-为了正常显示中文的对比结果，需要进行以下GIT配置：
-```git
-git config --global core.quotepath false
-```
-
 只对swagger的json数据文件进行差异对比，获取到对比结果后进行通知。
 
 新增文件、删除文件、重命名文件不做比较，即不会有通知。
@@ -67,7 +62,6 @@ git config --global core.quotepath false
 
 | Name          | Description   |
 | -------------: |:-------------:|
-| repoPath      | 拉取的API项目路径 |
 | target      | 展示比较内容的项目路径 |
 | email.host | 邮箱HOST      |
 | email.port | 邮箱PORT      |
@@ -75,7 +69,7 @@ git config --global core.quotepath false
 | email.password | 邮箱密码      |
 
 #### 接口文档
-部署的服务端需要有拉取下来的接口文档项目，即为配置项中的repoPath。
+部署的服务端需要有接口文档仓库，以便获取对比数据。
 
 #### Swagger UI
 部署的服务端需要有Swagger UI项目，用于展示对比结果；即为配置项中的target。
@@ -87,19 +81,11 @@ git config --global core.quotepath false
 - module.json.example重命名为module.json
 
 #### Git Hooks
-在每次git push之后就会进行通知，邮件通知是通过git hooks的post-receive来触发的。
-
-所以请在你的API文档Git项目的服务端中加上post-receive脚本：
-```shell
-
-#!/bin/sh
-# 注意权限设置
-cd /home/git/sample-test
-unset GIT_DIR
-git pull 1>/tmp/sample-git.out 2>&1
-php -f /home/vagrant/Code/php-debug/Swagger-Notify/run.php 1>/tmp/swagger-notify.out 2>&1
-
-```
+- 在每次git push之后就会进行通知，邮件通知是通过git hooks的post-receive来触发的
+- 请在你的API文档Git项目的服务端中加上post-receive脚本
+  - 脚本样例在scripts文件夹中
+  - 代码中的unset GIT_DIR是关键，取消GIT_DIR这个变量，否则cd的路径将不能按预期工作
+  - **为了解决中文路径问题，会将GIT的core.quotepath配置改成false**
 
 #### 对比文件清理
 scripts文件夹里面的clean.sh脚本是用于定期清理对比文件，自行加入定时任务中
