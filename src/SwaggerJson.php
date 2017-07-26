@@ -66,7 +66,8 @@ class SwaggerJson
         $diffPaths = [];
         foreach ($this->_diffData as $file => $changeList) {
             $tplData = [];
-            $tplData["file"] = $file;
+            $file = pathinfo($file);
+            $tplData["file"] = $file['basename'];
             $tplData["var"] = "";
             foreach ($changeList as $jsonData) {
                 $jsonDataStr = json_encode($jsonData, JSON_UNESCAPED_UNICODE);

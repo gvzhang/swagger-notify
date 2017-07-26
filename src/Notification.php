@@ -55,7 +55,7 @@ class Notification
                 if ($diffLine || $addMethod || $deleteMethod) {
                     // 修改的接口信息
                     if ($diffLine) {
-                        $goodsArr = json_decode(file_get_contents($this->_repoPath . "/api-json/" . $file));
+                        $goodsArr = json_decode(file_get_contents($this->_repoPath . "/" . $file));
                         $node = new Node($goodsArr, $diffLine);
                         foreach ($textProcess->getDiffMethodInfo($node) as $methodInfo) {
                             array_push($diffInfoList[$file], $methodInfo);

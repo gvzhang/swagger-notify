@@ -37,6 +37,11 @@ swagger的json数据文件命名则为 **heygearsbusiness_client.json**
 ```
 
 #### 对比结果
+为了正常显示中文的对比结果，需要进行以下GIT配置：
+```git
+git config --global core.quotepath false
+```
+
 只对swagger的json数据文件进行差异对比，获取到对比结果后进行通知。
 
 新增文件、删除文件、重命名文件不做比较，即不会有通知。
