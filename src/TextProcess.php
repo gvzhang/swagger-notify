@@ -238,8 +238,18 @@ class TextProcess
         if ($this->_log) {
             return $this->_log;
         }
+        $gitDiffCmd = "git diff HEAD^ HEAD --unified=1";
+        // 检查第一次提交是否为merge，解决merge commit，导致无通知或者重复通知问题
         $cmd[] = sprintf('cd ' . $this->_repoPath);
-        $cmd[] = sprintf('git diff HEAD^ HEAD --unified=1');
+        $cmd[] = sprintf("git log -p -1 --oneline");
+        $command = join(' && ', $cmd);
+        $this->_runLocalCommand($command);
+        if (strpos(current($this->_log), "Merge branch") !== false) {
+            $gitDiffCmd = "git diff HEAD^^ HEAD^ --unified=1";
+        }
+
+        $cmd[] = sprintf('cd ' . $this->_repoPath);
+        $cmd[] = sprintf($gitDiffCmd);
         $command = join(' && ', $cmd);
         $this->_runLocalCommand($command);
         //$this->_log = explode(PHP_EOL, file_get_contents(rootPath()."/debug.txt"));
