@@ -6,3 +6,5 @@ env.yaml
 database/manager.json
 database/manager_module.json
 database/module.json
+admin
+debug.txt

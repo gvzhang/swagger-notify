@@ -14,7 +14,7 @@ class Notification
     private $_emailSrv;
     private $_emailTpl;
     const EMAIL_SUBJECT = "API接口更新通知";
-    const NOTIFY_API_URL = "http://192.168.2.23:8010";
+    const NOTIFY_API_URL = "http://192.168.2.23:8020";
 
     private $_repositorySrv;
 
@@ -55,8 +55,8 @@ class Notification
                 if ($diffLine || $addMethod || $deleteMethod) {
                     // 修改的接口信息
                     if ($diffLine) {
-                        $goodsArr = json_decode(file_get_contents($this->_repoPath . "/" . $file));
-                        $node = new Node($goodsArr, $diffLine);
+                        $apiContent = json_decode(file_get_contents($this->_repoPath . "/" . $file));
+                        $node = new Node($apiContent, $diffLine);
                         foreach ($textProcess->getDiffMethodInfo($node) as $methodInfo) {
                             array_push($diffInfoList[$file], $methodInfo);
                         }
@@ -89,8 +89,21 @@ class Notification
     {
         $diffInfoList = $this->getChangeApiInfo();
         if ($diffInfoList) {
+            $textProcess = new TextProcess($this->_repoPath);
+            $fileRefObjList = [];
+            foreach ($diffInfoList as $file => $dList) {
+                $refObj = new \stdClass();
+                // 生成关联ref model数据
+                $apiContent = json_decode(file_get_contents($this->_repoPath . "/" . $file));
+                $node = new Node($apiContent);
+                foreach ($dList as $dList2) {
+                    $textProcess->getDiffInfoRefModel($dList2, $node, $refObj);
+                }
+                $fileRefObjList[$file] = $refObj;
+            }
+
             // 生成修改后的Swagger JSON数据
-            $swaggerJson = new SwaggerJson($diffInfoList, $this->_target);
+            $swaggerJson = new SwaggerJson($diffInfoList, $this->_target, $fileRefObjList);
             $htmlFileList = $swaggerJson->generate();
             if ($htmlFileList) {
                 foreach ($htmlFileList as $file) {

@@ -9,10 +9,11 @@
             "email": "gzhang@heygears.com"
         }
     },
-    "basePath": "/",
+    "host": "dev.kong.business.heygears.com",
+    "basePath": "/##MODULE##",
     "paths": {
         ##VAR##
     },
-    "definitions": {},
+    "definitions": ##DEFINITIONS##,
     "securityDefinitions": {}
 }

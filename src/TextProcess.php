@@ -168,11 +168,11 @@ class TextProcess
     public function getDiffMethodInfo(Node $node)
     {
         $this->_diffInfoList = [];
-        $this->_getDiffMethodInfo($node->getData(), $node->getMethod());
+        $this->_getDiffMethodInfo($node->getData(), $node->getApiContent());
         return $this->_diffInfoList;
     }
 
-    private function _getDiffMethodInfo($data, $diffMethod)
+    private function _getDiffMethodInfo($data, $apiContent)
     {
         foreach ($data as $key => $obj) {
             // API方法以及HTTP方法相同才计入差异
@@ -183,13 +183,13 @@ class TextProcess
                 $this->_nameJson = "";
                 $this->_httpMethod = "";
             }
-            if ($key && in_array($key, array_keys($diffMethod))) {
+            if ($key && in_array($key, array_keys($apiContent))) {
                 $this->_checkMethod = true;
                 $this->_nameJson = '{"' . $key . '":{##DETAIL##}}';
-                $this->_httpMethod = $diffMethod[$key];
+                $this->_httpMethod = $apiContent[$key];
             }
             if (is_object($obj) || is_array($obj)) {
-                $this->_getDiffMethodInfo($obj, $diffMethod);
+                $this->_getDiffMethodInfo($obj, $apiContent);
             }
         }
     }
@@ -242,7 +242,35 @@ class TextProcess
         $cmd[] = sprintf('git diff HEAD^ HEAD --unified=1');
         $command = join(' && ', $cmd);
         $this->_runLocalCommand($command);
+        //$this->_log = explode(PHP_EOL, file_get_contents(rootPath()."/debug.txt"));
         return $this->_log;
+    }
+
+    /**
+     * 获取关联MODEL的JSON数据
+     * @param $diffInfoList
+     * @param Node $node
+     * @param \stdClass $refObj
+     */
+    public function getDiffInfoRefModel($diffInfoList, Node $node, \stdClass $refObj)
+    {
+        if (is_object($diffInfoList) || is_array($diffInfoList)) {
+            foreach ($diffInfoList as $diff) {
+                if (is_object($diff) || is_array($diff)) {
+                    $this->getDiffInfoRefModel($diff, $node, $refObj);
+                } else {
+                    if (strpos($diff, "#/definitions/") !== false) {
+                        $refName = str_replace("#/definitions/", "", $diff);
+                        $result = $node->getRefModelInfo($refName);
+                        if ($result) {
+                            // 递归获取ref model中的ref model
+                            $this->getDiffInfoRefModel($result, $node, $refObj);
+                            $refObj->$refName = $result;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private function _runLocalCommand($command)

@@ -9,6 +9,8 @@ namespace App;
 class SwaggerJson
 {
     const REPLACE_VAR = "##VAR##";
+    const REPLACE_MODULE_VAR = "##MODULE##";
+    const REPLACE_DEFINITIONS_VAR = "##DEFINITIONS##";
 
     private $_target;
     private $_diffData;
@@ -17,10 +19,11 @@ class SwaggerJson
     private $_jsonDir;
     private $_htmlDir;
 
-    public function __construct($data, $target)
+    public function __construct($data, $target, $refData)
     {
         $this->_target = $target;
         $this->_diffData = $data;
+        $this->_refData = $refData;
         if (!is_dir($this->_target)) {
             throw new \InvalidArgumentException("target Error");
         }
@@ -44,10 +47,15 @@ class SwaggerJson
         $htmlTpl = $this->_getHtmlTpl();
         foreach ($tplData as $data) {
             $file = pathinfo($data["file"]);
+            $module = explode("_", $file["filename"]);
+            $module = count($module) == 2 ? $module[1] : "";
+
             // 写入JSON数据
-            $putContent = json_decode(str_replace(self::REPLACE_VAR, $data["var"], $jsonTpl));
+            $putContent = str_replace(self::REPLACE_VAR, $data["var"], $jsonTpl);
+            $putContent = str_replace(self::REPLACE_DEFINITIONS_VAR, $data["ref"], $putContent);
+            $putContent = json_decode(str_replace(self::REPLACE_MODULE_VAR, $module, $putContent));
             $jsonSavePath = $this->_jsonDir . "/" . $file["filename"] . "-" . time() . ".json";
-            file_put_contents($this->_target . "/" . $jsonSavePath, json_encode($putContent, JSON_UNESCAPED_UNICODE));
+            file_put_contents($this->_target . "/" . $jsonSavePath, json_encode($putContent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
             // 写入HTML数据
             $putContent = str_replace(self::REPLACE_VAR, $jsonSavePath, $htmlTpl);
@@ -66,6 +74,8 @@ class SwaggerJson
         $diffPaths = [];
         foreach ($this->_diffData as $file => $changeList) {
             $tplData = [];
+            $tplData["ref"] = json_encode($this->_refData[$file], JSON_UNESCAPED_UNICODE);
+
             $file = pathinfo($file);
             $tplData["file"] = $file['basename'];
             $tplData["var"] = "";
