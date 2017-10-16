@@ -6,4 +6,4 @@ cd $repo_path
 unset GIT_DIR
 git config --global core.quotepath false
 git pull 1>/tmp/sample-git.out 2>&1
-php -f /home/vagrant/Code/php-debug/Swagger-Notify/run.php $repo_path 1>/tmp/swagger-notify.out 2>&1
+php -f /home/vagrant/Code/Swagger-Notify/run.php $repo_path 1>/tmp/swagger-notify.out 2>&1
