@@ -206,7 +206,7 @@ class TextProcess
         $logDiff = false;
         foreach ($diffLog as $key => $log) {
             // 匹配差异JSON文件
-            $matchRes = preg_match_all('/diff\s--git\s\"?a\/(.*?)(\"|\s)/u', $log, $matches, PREG_PATTERN_ORDER);
+            $matchRes = preg_match_all('/diff\s--git\s\"?a\/(.*?)(\"|\sb)/u', $log, $matches, PREG_PATTERN_ORDER);
             if ($matchRes) {
                 $logDiff = false;
                 $file = pathinfo($matches[1][0]);
